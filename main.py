@@ -192,17 +192,6 @@ def main():
                 print(f"\n{i}. {priority_emoji} {rec.category} [{rec.priority} Priority]")
                 print(f"   💡 {rec.recommendation}")
                 print(f"   🛠️  How to implement: {rec.implementation}")
-            
-            # Score breakdown
-            breakdown = result.score_breakdown
-            print("\n📊 Score Breakdown:")
-            print("=" * 50)
-            print(f"  • Keyword Score: {breakdown.keyword_score}/10")
-            print(f"  • ATS Compatibility: {breakdown.ats_compatibility}/10")
-            print(f"  • Industry Terms: {breakdown.industry_terms}/10")
-            print(f"  • Skills Optimization: {breakdown.skills_optimization}/10")
-            print(f"  • Format & Structure: {breakdown.format_structure}/10")
-            print(f"  • Explanation: {breakdown.explanation}")
         else:
             print("❌ Failed to analyze resume")
     else:
