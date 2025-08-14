@@ -1,0 +1,101 @@
+.google-auth-container {
+  background-color: white;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+  padding: 24px;
+  margin-bottom: 24px;
+}
+
+.signed-in-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.user-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+}
+
+.user-name {
+  font-size: 18px;
+  font-weight: 500;
+  color: #1f2937;
+  margin: 0;
+}
+
+.user-email {
+  font-size: 14px;
+  color: #6b7280;
+  margin: 0;
+}
+
+.sign-out-btn {
+  background-color: #ef4444;
+  color: white;
+  padding: 8px 16px;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.sign-out-btn:hover {
+  background-color: #dc2626;
+}
+
+.sign-in-content {
+  text-align: center;
+}
+
+.app-title {
+  font-size: 24px;
+  font-weight: bold;
+  color: #1f2937;
+  margin-bottom: 16px;
+}
+
+.app-description {
+  color: #6b7280;
+  margin-bottom: 24px;
+}
+
+.sign-in-btn {
+  background-color: #3b82f6;
+  color: white;
+  padding: 12px 24px;
+  border-radius: 6px;
+  border: none;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 auto;
+}
+
+.sign-in-btn:hover {
+  background-color: #2563eb;
+}
+
+.google-icon {
+  width: 20px;
+  height: 20px;
+}
+
+.loading-container {
+  text-align: center;
+  padding: 40px;
+}
+
+.loading-text {
+  color: #6b7280;
+}

@@ -1,0 +1,125 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: Resume SEO Analyzer - Serverless Application
+
+Globals:
+  Function:
+    Timeout: 30
+    MemorySize: 256
+    Runtime: python3.9
+
+Parameters:
+  OpenAIApiKey:
+    Type: String
+    Description: OpenAI API Key for GPT analysis
+    NoEcho: true
+
+Resources:
+  ResumeAnalyzerFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: resume-analyzer-api
+      CodeUri: .
+      Handler: lambda_main.lambda_handler
+      Environment:
+        Variables:
+          OPENAI_API_KEY: !Ref OpenAIApiKey
+      Events:
+        HealthCheck:
+          Type: Api
+          Properties:
+            Path: /health
+            Method: get
+        AnalyzeResume:
+          Type: Api
+          Properties:
+            Path: /api/analyze
+            Method: post
+        AnalyzeSample:
+          Type: Api
+          Properties:
+            Path: /api/analyze/sample
+            Method: post
+        Options:
+          Type: Api
+          Properties:
+            Path: /{proxy+}
+            Method: options
+
+  # S3 Bucket for hosting the React frontend
+  WebsiteBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub '${AWS::StackName}-website'
+      WebsiteConfiguration:
+        IndexDocument: index.html
+        ErrorDocument: error.html
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: false
+        BlockPublicPolicy: false
+        IgnorePublicAcls: false
+        RestrictPublicBuckets: false
+
+  # Bucket policy to allow public read access
+  WebsiteBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref WebsiteBucket
+      PolicyDocument:
+        Statement:
+          - Sid: PublicReadGetObject
+            Effect: Allow
+            Principal: '*'
+            Action: 's3:GetObject'
+            Resource: !Sub '${WebsiteBucket}/*'
+
+  # CloudFront distribution for the website
+  CloudFrontDistribution:
+    Type: AWS::CloudFront::Distribution
+    Properties:
+      DistributionConfig:
+        Origins:
+          - DomainName: !GetAtt WebsiteBucket.RegionalDomainName
+            Id: S3Origin
+            S3OriginConfig:
+              OriginAccessIdentity: ''
+        Enabled: true
+        DefaultRootObject: index.html
+        DefaultCacheBehavior:
+          TargetOriginId: S3Origin
+          ViewerProtocolPolicy: redirect-to-https
+          AllowedMethods:
+            - GET
+            - HEAD
+            - OPTIONS
+          CachedMethods:
+            - GET
+            - HEAD
+          ForwardedValues:
+            QueryString: false
+            Cookies:
+              Forward: none
+        CustomErrorResponses:
+          - ErrorCode: 404
+            ResponseCode: 200
+            ResponsePagePath: /index.html
+        PriceClass: PriceClass_100
+
+Outputs:
+  ApiGatewayUrl:
+    Description: "API Gateway endpoint URL"
+    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/"
+    Export:
+      Name: !Sub "${AWS::StackName}-ApiUrl"
+      
+  WebsiteURL:
+    Description: "Website URL"
+    Value: !GetAtt CloudFrontDistribution.DomainName
+    Export:
+      Name: !Sub "${AWS::StackName}-WebsiteURL"
+      
+  S3BucketName:
+    Description: "S3 Bucket for website hosting"
+    Value: !Ref WebsiteBucket
+    Export:
+      Name: !Sub "${AWS::StackName}-S3Bucket"

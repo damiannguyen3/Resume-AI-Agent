@@ -1,0 +1,126 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: Resume SEO Analyzer - Serverless Application
+
+Globals:
+  Function:
+    Timeout: 30
+    MemorySize: 512
+    Runtime: python3.9
+
+Parameters:
+  GoogleApiKey:
+    Type: String
+    Description: Google Gemini API Key for resume analysis
+    NoEcho: true
+
+Resources:
+  # Lambda function for the API
+  ResumeAnalyzerFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: resume-analyzer-api
+      CodeUri: .
+      Handler: lambda_function.lambda_handler
+      Environment:
+        Variables:
+          GOOGLE_API_KEY: !Ref GoogleApiKey
+      Events:
+        HealthCheck:
+          Type: Api
+          Properties:
+            Path: /health
+            Method: get
+        AnalyzeResume:
+          Type: Api
+          Properties:
+            Path: /api/analyze
+            Method: post
+        AnalyzeSample:
+          Type: Api
+          Properties:
+            Path: /api/analyze/sample
+            Method: post
+        CorsOptions:
+          Type: Api
+          Properties:
+            Path: /{proxy+}
+            Method: options
+
+  # S3 Bucket for hosting the React frontend
+  WebsiteBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub '${AWS::StackName}-website-${AWS::AccountId}'
+      WebsiteConfiguration:
+        IndexDocument: index.html
+        ErrorDocument: index.html
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: false
+        BlockPublicPolicy: false
+        IgnorePublicAcls: false
+        RestrictPublicBuckets: false
+
+  # Bucket policy to allow public read access
+  WebsiteBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref WebsiteBucket
+      PolicyDocument:
+        Statement:
+          - Sid: PublicReadGetObject
+            Effect: Allow
+            Principal: '*'
+            Action: 's3:GetObject'
+            Resource: !Sub '${WebsiteBucket}/*'
+
+  # CloudFront distribution for the website
+  CloudFrontDistribution:
+    Type: AWS::CloudFront::Distribution
+    Properties:
+      DistributionConfig:
+        Origins:
+          - DomainName: !GetAtt WebsiteBucket.RegionalDomainName
+            Id: S3Origin
+            S3OriginConfig:
+              OriginAccessIdentity: ''
+        Enabled: true
+        DefaultRootObject: index.html
+        DefaultCacheBehavior:
+          TargetOriginId: S3Origin
+          ViewerProtocolPolicy: redirect-to-https
+          AllowedMethods:
+            - GET
+            - HEAD
+            - OPTIONS
+          CachedMethods:
+            - GET
+            - HEAD
+          ForwardedValues:
+            QueryString: false
+            Cookies:
+              Forward: none
+        CustomErrorResponses:
+          - ErrorCode: 404
+            ResponseCode: 200
+            ResponsePagePath: /index.html
+        PriceClass: PriceClass_100
+
+Outputs:
+  ApiGatewayUrl:
+    Description: "API Gateway endpoint URL for the backend"
+    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod"
+    Export:
+      Name: !Sub "${AWS::StackName}-ApiUrl"
+      
+  WebsiteURL:
+    Description: "CloudFront URL for the website"
+    Value: !Sub "https://${CloudFrontDistribution.DomainName}"
+    Export:
+      Name: !Sub "${AWS::StackName}-WebsiteURL"
+      
+  S3BucketName:
+    Description: "S3 Bucket for website hosting"
+    Value: !Ref WebsiteBucket
+    Export:
+      Name: !Sub "${AWS::StackName}-S3Bucket"
